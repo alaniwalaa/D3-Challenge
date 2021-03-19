@@ -57,16 +57,16 @@ d3.csv('./assets/data/data.csv').then(function(data){
 
     // Add dots 
     svg.append('g')
-        .selectAll('dot')
+        .selectAll('circle')
         .data(data)
         .enter()
         .append('circle')
         // check if it's necessary???
-        .attr('class', 'circle')
-        .attr('cx', function(d) { return x(d.smokes); } )
-        .attr('cy', function(d) { return y(d.age); } )
+        // .attr('class', 'circle')
+        // .attr('cx', function(d) { return x(d); } )
+        // .attr('cy', function(d) { return y(d); } )
         .attr('r', 1.5)
-        .style('fill', '#69b3a2')
+        .attr('fill', '#69b3a2');
 
 
 
