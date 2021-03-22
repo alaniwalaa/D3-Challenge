@@ -12,12 +12,14 @@ function makeResponsive() {
     // SVG dimentoins as the current window 
     var svgHeight = window.innerHeight; 
     var svgWidth = window.innerWidth; 
+    
     var margin = {
         top: 50, 
         bottom: 50, 
         left: 50, 
         right: 50
     }; 
+
     var height = svgHeight - margin.top - margin.bottom; 
     var width = svgWidth - margin.left - margin.right; 
 
@@ -30,7 +32,7 @@ function makeResponsive() {
 
     // Append group element 
     var chartGroup = svg.append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.top}`);
+        .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Read CSV file 
     d3.csv('./assets/data/data.csv').then(function(data) {
@@ -39,13 +41,13 @@ function makeResponsive() {
         data.forEach(function(d) {
             d.smokes = +d.smokes; 
             d.age = +d.age; 
-            console.log("smokes: ", d.smokes);
-            console.log("ages: " , d.age)
+            // console.log("smokes: ", d.smokes);
+            // console.log("ages: " , d.age)
         }); 
 
         // Scales 
-        var xBandScale = d3.scaleBand()
-            .domain(d3.extent(data, d => d.smokes))
+        var xBandScale = d3.scaleLinear()
+            .domain(20, d3.extent(data, d => d.smokes))
             .range([0, width]);
             // .padding(0.1);
         
@@ -54,53 +56,53 @@ function makeResponsive() {
             .range([height, 0]);
         
         // Create axis 
-        var bottomAxis = d3.axisBottom(xBandScale).ticks(10);
-        var leftAxis = d3.axisLeft(yLinearScale).ticks(8);
+        var bottomAxis = d3.axisBottom(xBandScale);
+        var leftAxis = d3.axisLeft(yLinearScale);
     
         // Append axis 
         chartGroup.append('g')
             .attr('transform', `translate(0, ${height})`)
-            .call(bottomAxis)
+            .call(bottomAxis);
 
         chartGroup.append('g')
             .call(leftAxis);
 
-        // Line generator
-        var line = d3.line()
-            .x(d => xBandScale(d.smokes))
-            .y(d => yLinearScale(d.age));
+        // // Line generator
+        // var line = d3.line()
+        //     .x(d => xBandScale(d.smokes))
+        //     .y(d => yLinearScale(d.age));
 
-        // Append line
-        chartGroup.append("path")
-            .data([data])
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", "red");
+        // // Append line
+        // chartGroup.append('div')
+        //     .data([data])
+        //     .attr("d", line)
+        //     .attr("fill", "none")
+        //     .attr("stroke", "red");
     
         // Append circles 
         var circlesGroup = chartGroup.selectAll('circle')
             .data(data)
             .enter()
-            .append('circle')
+            .append('stateCircle')
             .attr('cx', d => xBandScale(d.smokes))
             .attr('cy', d => yLinearScale(d.age))
             .attr('r', '10')
-            .attr('fill', 'gold')
-            .attr('stroke', 'yellow')
+            // .attr('fill', 'gold')
+            .attr('opacity', '.5')
+            // .attr('stroke', 'yellow')
             .attr('stroke-width', '1');
 
         // Create tool tip 
         // Initialize Tooltip
-        var toolTip = d3
+        var toolTip = d3.tip()
         .select('body')
-        .append('div')
-        .attr("class", "tooltip")
+        .append('toolTip')
+        .attr("class", "d3-tip")
         
         // positioning the blue box (the info box)
         .offset([80, -60])
         .html(function(d) {
-            return (`<strong>${dateFormatter(d.date)}<strong><hr>${d.medals}
-            medal(s) won`);
+            return (`<strong>${d.smokes}<strong><hr>${d.age}`);
       });
 
     // Create the tooltip in chartGroup.
