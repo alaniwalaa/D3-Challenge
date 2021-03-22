@@ -1,97 +1,128 @@
-// @TODO: YOUR CODE HERE!
+// Automatically resizing the chart 
+function makeResponsive() {
 
-// Dimentions of SVG Area 
-var svgWidth = 960;
-var svgHeight = 500;
+    // Reset SVG area when browser load and replace with resixed chart
+    var svgArea = d3.select('body').select('svg');
 
-var margin = {
-    top: 50, 
-    bottom: 50, 
-    left: 50, 
-    right: 50
-};
+    // Clear svg
+    if (!svgArea.empty()) {
+        svgArea.remove();
+    }
 
-var height = svgHeight - margin.top - margin.bottom;
-var width = svgWidth - margin.left - margin.right;
+    // SVG dimentoins as the current window 
+    var svgHeight = window.innerHeight; 
+    var svgWidth = window.innerWidth; 
+    var margin = {
+        top: 50, 
+        bottom: 50, 
+        left: 50, 
+        right: 50
+    }; 
+    var height = svgHeight - margin.top - margin.bottom; 
+    var width = svgWidth - margin.left - margin.right; 
 
-// SVG elements 
-var svg = d3
-    .select('#scatter')
-    .append('svg')
-    .attr('height', svgHeight)
-    .attr('width', svgWidth);
+    // Append SVG element
+    var svg = d3
+        .select('#scatter')
+        .append('svg')
+        .attr('height', svgHeight)
+        .attr('width', svgWidth); 
 
-// Group elements 
-var chartGroup = svg.append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top})`);
+    // Append group element 
+    var chartGroup = svg.append('g')
+        .attr('transform', `translate(${margin.left}, ${margin.top}`);
 
+    // Read CSV file 
+    d3.csv('./assets/data/data.csv').then(function(data) {
 
+        // Parse data 
+        data.forEach(function(d) {
+            d.smokes = +d.smokes; 
+            d.age = +d.age; 
+            console.log("smokes: ", d.smokes);
+            console.log("ages: " , d.age)
+        }); 
 
-// Pull data from CSV 
-d3.csv('./assets/data/data.csv').then(function(data){
-    // console.log(data);
-    data.forEach(function(smokersData) {
-        smokersData.smokes = +smokersData.smokes;
-        smokersData.age = +smokersData.age;
-        // console.log(smokersData)
-    });
-
-
-
-
-    // Scatter Plot 
-    // Add x axis 
-    var x = d3.scaleLinear()
-        .domain([0, 4000])
-        .range([0, width]);
-    svg.append('g')
-        .attr('tranform', 'translate(0,' + height + ')')
-        .call(d3.axisBottom(x));
-
-    // Add y axis 
-    var y = d3.scaleLinear()
-        .domain([0, 5000])
-        .range([height, 0])
-    svg.append('g')
-        .call(d3.axisLeft(y));
-
-    // Add dots 
-    svg.append('g')
-        .selectAll('circle')
-        .data(data)
-        .enter()
-        .append('circle')
-        // check if it's necessary???
-        // .attr('class', 'circle')
-        // .attr('cx', function(d) { return x(d); } )
-        // .attr('cy', function(d) { return y(d); } )
-        .attr('r', 1.5)
-        .attr('fill', '#69b3a2');
-
-
-
+        // Scales 
+        var xBandScale = d3.scaleBand()
+            .domain(d3.extent(data, d => d.smokes))
+            .range([0, width]);
+            // .padding(0.1);
+        
+        var yLinearScale = d3.scaleLinear()
+            .domain([0, d3.extent(data, d => d.age)])
+            .range([height, 0]);
+        
+        // Create axis 
+        var bottomAxis = d3.axisBottom(xBandScale).ticks(10);
+        var leftAxis = d3.axisLeft(yLinearScale).ticks(8);
     
-}).catch(function(error) {
+        // Append axis 
+        chartGroup.append('g')
+            .attr('transform', `translate(0, ${height})`)
+            .call(bottomAxis)
+
+        chartGroup.append('g')
+            .call(leftAxis);
+
+        // Line generator
+        var line = d3.line()
+            .x(d => xBandScale(d.smokes))
+            .y(d => yLinearScale(d.age));
+
+        // Append line
+        chartGroup.append("path")
+            .data([data])
+            .attr("d", line)
+            .attr("fill", "none")
+            .attr("stroke", "red");
+    
+        // Append circles 
+        var circlesGroup = chartGroup.selectAll('circle')
+            .data(data)
+            .enter()
+            .append('circle')
+            .attr('cx', d => xBandScale(d.smokes))
+            .attr('cy', d => yLinearScale(d.age))
+            .attr('r', '10')
+            .attr('fill', 'gold')
+            .attr('stroke', 'yellow')
+            .attr('stroke-width', '1');
+
+        // Create tool tip 
+        // Initialize Tooltip
+        var toolTip = d3
+        .select('body')
+        .append('div')
+        .attr("class", "tooltip")
+        
+        // positioning the blue box (the info box)
+        .offset([80, -60])
+        .html(function(d) {
+            return (`<strong>${dateFormatter(d.date)}<strong><hr>${d.medals}
+            medal(s) won`);
+      });
+
+    // Create the tooltip in chartGroup.
+    chartGroup.call(toolTip);
+
+    // Create "mouseover" event listener to display tooltip
+    circlesGroup.on("mouseover", function(d, i) {
+      toolTip.style('display', 'block');
+      toolTip.html(`${d.abbr}`);
+    })
+    
+    // Create "mouseout" event listener to hide tooltip
+      .on("mouseout", function() {
+        toolTip.style('display', 'none');
+      });
+  }).catch(function(error) {
     console.log(error);
+  });
+}
 
-});
+// When the browser loads, makeResponsive() is called
+makeResponsive();
 
-    
-
-
-
-
-
-
-
-// Include state abbreviations in the circles
-
-// Create and situate your axes and labels to the left and bottom of the chart
-
-
-
-
-
-
-
-// * Note: You'll need to use `python -m http.server` to run the visualization. This will host the page at `localhost:8000` in your web browser.
+// When the browser window is resized, makeResponsive() is called.
+d3.select(window).on("resize", makeResponsive);
